@@ -115,8 +115,7 @@ export class Block {
         for (var txid in this.txids) {
             // If the transaction does not exist, scrap the whole block and throw error
             if (!this.check_tx_exists(txid)) {
-                // Throw error UNFINDABLE_OBJECT
-                return;
+                throw new AnnotatedError('UNFINDABLE_OBJECT', `Block did not pass proof of work`)
             }
 
             const tx = Transaction.fromNetworkObject(await ObjectStorage.get(txid))
@@ -126,8 +125,7 @@ export class Block {
             await this.check_UTXO(tx)
 
             // Check for valid coinbase transaction
-            // only do this the first loop
-            if (txid == '0') {
+            if (txid == this.txids[0]) {
                 await this.check_coinbase(tx)
             }
         }
