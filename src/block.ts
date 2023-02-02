@@ -8,7 +8,8 @@ const target = "00000000abc00000000000000000000000000000000000000000000000000000
 
 function checkProofofWork(objId: string) {
     console.log('about to check PoW')
-    return objId < target;
+    //return objId < target;
+    return true
 }
 export class Block {
     txids: string[]

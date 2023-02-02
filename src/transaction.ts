@@ -116,6 +116,7 @@ export class Transaction {
     this.height = height
   }
   async validate() {
+    console.log("about to validate tx")
     const unsignedTxStr = canonicalize(this.toNetworkObject(false))
 
     if (this.inputs.length == 0) {

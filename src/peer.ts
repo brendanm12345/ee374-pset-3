@@ -176,6 +176,7 @@ export class Peer {
       await ObjectStorage.validate(msg.object)
     }
     catch (e: any) {
+      console.log("couldnt validate:")
       this.sendError(e)
       return
     }

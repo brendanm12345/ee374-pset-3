@@ -34,27 +34,25 @@ export class ObjectStorage {
     }
   }
   static async put(object: any) {
-    logger.debug(`Storing object with id ${this.id(o  bject)}: %o`, object)
+    logger.debug(`Storing object with id ${this.id(object)}: %o`, object)
     return await db.put(`object:${this.id(object)}`, object)
   }
   static async validate(object: ObjectType) {
+    console.log("trying to validate")
     if (object.type == "transaction") {
+      console.log("its a transaction")
       if (!TransactionObject.guard(object)) {
         throw new AnnotatedError('INVALID_FORMAT', 'Failed to parse tx object')
       }
       const tx = Transaction.fromNetworkObject(object)
       await tx.validate()
     } else if (object.type == "block") {
+      console.log("its a block")
       if (!BlockObject.guard(object)) {
         throw new AnnotatedError('INVALID_FORMAT', 'Failed to parse block object')
       }
       const block = Block.fromNetworkObject(object)
       await block.validate()
     }
-
-    if (!BlockObject.guard(object)) {
-      throw new AnnotatedError('INVALID_FORMAT', 'Failed to parse object')
-    }
-    
   }
 }
