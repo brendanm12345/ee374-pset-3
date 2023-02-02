@@ -34,7 +34,7 @@ export class ObjectStorage {
     }
   }
   static async put(object: any) {
-    logger.debug(`Storing object with id ${this.id(o  bject)}: %o`, object)
+    logger.debug(`Storing object with id ${this.id(object)}: %o`, object)
     return await db.put(`object:${this.id(object)}`, object)
   }
   static async validate(object: ObjectType) {
