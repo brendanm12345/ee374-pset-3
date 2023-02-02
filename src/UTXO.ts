@@ -1,7 +1,11 @@
 export class UTXO {
     UTXO_set: Set<string> = new Set()
-    
-    update_set(txid: string) {
+
+    add_set(txid: string) {
         this.UTXO_set.add(txid)
+    }
+
+    remove_set(txid: string) {
+        this.UTXO_set.delete(txid)
     }
 }
