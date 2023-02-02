@@ -90,7 +90,6 @@ export class Block {
                 await ObjectStorage.get(txid)
             } catch {
                 throw new AnnotatedError('UNFINDABLE_OBJECT', `Couldn't find object ${txid}`)
-
             }
         }
     }
@@ -102,7 +101,6 @@ export class Block {
         if (this.txids == null || this.nonce == null || this.previd == null || this.created == null || this.T == null || this.miner == null || this.note == null) {
             throw new AnnotatedError('INVALID_FORMAT', `Block is missing required fields`)
         }
-        
 
         if (this.T != target) {
             throw new AnnotatedError('INVALID_FORMAT', `Block target is different from required target`)
