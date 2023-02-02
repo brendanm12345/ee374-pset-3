@@ -12,6 +12,72 @@ function checkProofofWork(objId: string) {
     //return objId < target;
     return true
 }
+
+const checkBlockFormat = (block: any): Block | string => {
+    const requiredFields = [
+        "T",
+        "created",
+        "miner",
+        "nonce",
+        "note",
+        "previd",
+        "txids",
+        "type"
+    ];
+
+    for (const field of requiredFields) {
+        if (!(field in block)) {
+            throw new AnnotatedError('INVALID_FORMAT', `Block is missing some required fields: ${field}`)
+        }
+    }
+
+    if (
+        typeof block.T !== "string" ||
+        block.T.length !== 64 ||
+        !/^[0-9a-fA-F]+$/.test(block.T)
+    ) {
+        throw new AnnotatedError('INVALID_FORMAT', `Invalid T field format`)
+    }
+
+    if (typeof block.created !== "number") {
+        throw new AnnotatedError('INVALID_FORMAT', `Invalid created field format.`)
+    }
+
+    if (typeof block.miner !== "string") {
+        throw new AnnotatedError('INVALID_FORMAT', `Invalid miner field format.`)
+    }
+
+    if (
+        typeof block.nonce !== "string" ||
+        block.nonce.length !== 64 ||
+        !/^[0-9a-fA-F]+$/.test(block.nonce)
+    ) {
+        throw new AnnotatedError('INVALID_FORMAT', `Invalid nonce field format.`)
+    }
+
+    if (typeof block.note !== "string") {
+        throw new AnnotatedError('INVALID_FORMAT', `Invalid note field format.`)
+    }
+
+    if (
+        typeof block.previd !== "string" ||
+        block.previd.length !== 64 ||
+        !/^[0-9a-fA-F]+$/.test(block.previd)
+    ) {
+        throw new AnnotatedError('INVALID_FORMAT', `Invalid previd field format.`)
+    }
+
+    if (!Array.isArray(block.txids) || !block.txids.every((txid: any) => typeof txid === "string")) {
+        throw new AnnotatedError('INVALID_FORMAT', `Invalid txids field format.`)
+    }
+
+    if (typeof block.type !== "string" || block.type !== "block") {
+        throw new AnnotatedError('INVALID_FORMAT', `Invalid type field format.`)
+    }
+
+    return block as Block;
+};
+
 export class Block {
     txids: string[]
     nonce: string
@@ -20,6 +86,7 @@ export class Block {
     T: string
     miner: string
     note: string
+    type: string
 
     static fromNetworkObject(blockObj: BlockObjectType): Block {
         let txids: string[] = blockObj.txids
@@ -29,10 +96,11 @@ export class Block {
         let T: string = blockObj.T
         let miner: string = blockObj.miner
         let note: string = blockObj.note
+        let type: string = blockObj.type
 
-        return new Block(txids, nonce, previd, created, T, miner, note);
+        return new Block(txids, nonce, previd, created, T, miner, note, type);
     }
-    constructor(txids: string[], nonce: string, previd: string | null, created: number, T: string, miner: string, note: string,) {
+    constructor(txids: string[], nonce: string, previd: string | null, created: number, T: string, miner: string, note: string, type: string) {
         this.txids = txids
         this.nonce = nonce
         this.previd = previd
@@ -40,6 +108,7 @@ export class Block {
         this.T = T
         this.miner = miner
         this.note = note
+        this.type = type
     }
 
     async check_coinbase(tx: Transaction) {
@@ -88,12 +157,12 @@ export class Block {
             }
             try {
                 await ObjectStorage.get(txid)
-            } catch {
+            } catch (error) {
                 throw new AnnotatedError('UNFINDABLE_OBJECT', `Couldn't find object ${txid}`)
             }
         }
     }
-        
+
 
     async validate() {
         console.log('about to validate block')
@@ -101,6 +170,7 @@ export class Block {
         if (this.txids == null || this.nonce == null || this.previd == null || this.created == null || this.T == null || this.miner == null || this.note == null) {
             throw new AnnotatedError('INVALID_FORMAT', `Block is missing required fields`)
         }
+        
 
         if (this.T != target) {
             throw new AnnotatedError('INVALID_FORMAT', `Block target is different from required target`)
