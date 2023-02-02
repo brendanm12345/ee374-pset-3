@@ -1,22 +1,38 @@
 import { Transaction } from './transaction'
 import { AnnotatedError, BlockObjectType } from './message'
 import { ObjectStorage } from './store'
+import { network } from './network'
 
-// 
+
+const target = "00000000abc00000000000000000000000000000000000000000000000000000"
+
+function checkProofofWork(objId: string) {
+    console.log('about to check PoW')
+    return objId < target;
+}
 export class Block {
-    static fromNetworkObject(txObj: BlockObjectType): Block {
-        let txids: string[] = []
-        let nonce: string
-        let previd: string | null
-        let created: number
-        let T: string
-        let miner: string
-        let note: string
-        let height: number | null = null
+    txids: string[]
+    nonce: string
+    previd: string | null
+    created: number
+    T: string
+    miner: string
+    note: string
+
+    static fromNetworkObject(blockObj: BlockObjectType): Block {
+        let txids: string[] = blockObj.txids
+        let nonce: string = blockObj.nonce
+        let previd: string | null = blockObj.previd
+        let created: number = blockObj.created
+        let T: string = blockObj.T
+        let miner: string = blockObj.miner
+        let note: string = blockObj.note
 
         // decompose block object and verify that everything is good
 
-        // PoW
+
+
+
 
         // loop through transactions and process
 
@@ -29,41 +45,54 @@ export class Block {
         // }
         // const outputs = Transaction.outputsFromNetworkObject(txObj.outputs)
 
-        return new Block(ObjectStorage.id(txObj), txids, nonce, previd, created, T, miner, note, height)
+        return new Block(txids, nonce, previd, created, T, miner, note);
+    }
+    constructor(txids: string[], nonce: string, previd: string | null, created: number, T: string, miner: string, note: string,) {
+        this.txids = txids
+        this.nonce = nonce
+        this.previd = previd
+        this.created = created
+        this.T = T
+        this.miner = miner
+        this.note = note
     }
     async validate() {
-        // const unsignedTxStr = canonicalize(this.toNetworkObject(false))
+        console.log('about to validate block')
+        // check that block has required fields and that they're in right format
+        if (false) {
+            return
+        }
 
-        // if (this.inputs.length == 0) {
-        //   // assume all coinbases are valid for now
-        //   return
-        // }
+        if (this.T != target) {
+            throw new AnnotatedError('INVALID_FORMAT', `Block target is different from required target`)
+        }
 
-        // const inputValues = await Promise.all(
-        //   this.inputs.map(async (input, i) => {
-        //     const prevOutput = await input.outpoint.resolve()
+        if (!checkProofofWork(ObjectStorage.id(this))) {
+            throw new AnnotatedError('INVALID_BLOCK_POW', `Block did not pass proof of work`)
+        }
 
-        //     if (input.sig === null) {
-        //       throw new AnnotatedError('INVALID_TX_SIGNATURE', `No signature available for input ${i} of transaction ${this.txid}`)
-        //     }
-        //     if (!await ver(input.sig, unsignedTxStr, prevOutput.pubkey)) {
-        //       throw new AnnotatedError('INVALID_TX_SIGNATURE', `Signature validation failed for input ${i} of transaction ${this.txid}`)
-        //     }
+        // loop through the txids checking if theres a corresponding txn in local if not send get object 
+        for (var tx in this.txids) {
+            try {
+                if (await ObjectStorage.get(tx)) {
+                    continue
+                }
+            } catch (error) {
+                for (let peer of network.peers) {
+                    peer.sendMessage({
+                        type: 'getobject',
+                        object: tx
+                    })
+                }
+                try {
+                    if (await ObjectStorage.get(tx)) {
+                        continue
+                    }
+                } catch {
+                    throw new AnnotatedError('UNFINDABLE_OBJECT', `Couldn't find object ${tx}`)
 
-        //     return prevOutput.value
-        //   })
-        // )
-        // let sumInputs = 0
-        // let sumOutputs = 0
-
-        // for (const inputValue of inputValues) {
-        //   sumInputs += inputValue
-        // }
-        // for (const output of this.outputs) {
-        //   sumOutputs += output.value
-        // }
-        // if (sumInputs < sumOutputs) {
-        //   throw new AnnotatedError('INVALID_TX_CONSERVATION', `Transaction ${this.txid} does not respect the Law of Conservation. Inputs summed to ${sumInputs}, while outputs summed to ${sumOutputs}.`)
-        // }
+                }
+            }
+        }
     }
 }
